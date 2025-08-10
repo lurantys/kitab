@@ -1,0 +1,173 @@
+/*
+  Quran Recognize — Monochrome UI
+  - Pure black background, white primary, strategic grays
+  - Focus: massive recording button with premium motion
+  - 60fps: transforms + opacity, CSS variables driven by JS
+*/
+
+:root {
+  /* Plain black & white */
+  --bg: #000;
+  --fg: #fff;
+  --muted: #fff;
+  --muted-2: #fff;
+  --panel: #000;
+  --stroke: #fff;
+  --glow: transparent;
+  --brand: #fff;
+  --accent: #fff;
+
+  --ring-size: clamp(160px, 22vw, 280px);
+  --button-size: clamp(120px, 18vw, 220px);
+  --ring-scale: 1; /* driven by audio level [0..1.2] */
+  --breath-scale: 1; /* idle breathing */
+
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-ar-brand: "Tajawal", var(--font-sans);
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+.app {
+  min-height: 100svh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  align-items: center;
+  justify-items: center;
+  position: relative;
+  padding: clamp(16px, 3.5vw, 48px);
+}
+
+.header { width: 100%; display: flex; justify-content: center; }
+.brand-ar {
+  font-family: var(--font-ar-brand);
+  font-weight: 900;
+  font-size: clamp(24px, 5vw, 44px);
+  letter-spacing: 0.02em;
+  color: var(--brand);
+}
+
+.hero {
+  width: min(100%, 1040px);
+  margin-inline: auto;
+  display: grid;
+  justify-items: center;
+  gap: clamp(18px, 4vw, 28px);
+  position: relative;
+  container-type: inline-size;
+}
+
+/* Geometric background: subtle tessellation and vignette */
+.geometric-pattern { display: none !important; }
+
+/* Subtle Islamic star motif via repeating conic gradient mask */
+.geometric-pattern::after {
+  content: "";
+  position: absolute; inset: 0;
+  background:
+    repeating-conic-gradient(from 45deg, rgba(255,255,255,0.02) 0 10deg, rgba(255,255,255,0.0) 10deg 45deg);
+  mask: radial-gradient(circle at center, black 0%, transparent 65%);
+}
+
+/* Particles canvas scales to full screen */
+#particles { display: none !important; }
+
+.mic-button {
+  position: relative;
+  width: var(--button-size);
+  height: var(--button-size);
+  border-radius: 999px;
+  border: 2px solid var(--stroke);
+  background: transparent;
+  color: var(--fg);
+  display: grid; place-items: center;
+  cursor: pointer;
+  isolation: isolate;
+  outline: none;
+  transform: none;
+  transition: none;
+  box-shadow: none;
+}
+.mic-button:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.mic-button:hover { background: transparent; }
+.mic-button:active { background: #fff; color: #000; }
+
+.button-bg { display: none; }
+
+.rings { display: none; }
+
+.ripple {
+  position: absolute; inset: 0; border-radius: inherit; overflow: hidden; z-index: 0;
+}
+.ripple span { display: none; }
+@keyframes ripple { to { transform: translate(-50%, -50%) scale(18); opacity: 0; } }
+
+.icon { position: absolute; display: grid; place-items: center; color: #fff; }
+.icon.mic { opacity: 1; transition: opacity 160ms ease; }
+.icon.stop { opacity: 0; transition: opacity 180ms ease; }
+.icon.spinner { width: 36px; height: 36px; border-radius: 999px; border: 2px solid #fff; border-top-color: transparent; animation: spin 1s linear infinite; opacity: 0; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* State-driven icon visibilities */
+.app[data-state="idle"] .icon.mic { opacity: 1; }
+.app[data-state="idle"] .icon.stop,
+.app[data-state="idle"] .icon.spinner { opacity: 0; }
+
+.app[data-state="listening"] .icon.mic { opacity: 0; }
+.app[data-state="listening"] .icon.stop { opacity: 1; }
+
+.app[data-state="processing"] .icon.mic,
+.app[data-state="processing"] .icon.stop { opacity: 0; }
+.app[data-state="processing"] .icon.spinner { opacity: 1; }
+
+.status {
+  text-align: center;
+  display: grid; gap: 8px;
+}
+.status-line { letter-spacing: 0.2em; text-transform: uppercase; font-weight: 800; color: #fff; opacity: 0.9; transform: none; }
+.status-line.enter { animation: fadeUp 560ms cubic-bezier(.2,.8,.2,1) both; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.arabic-line { font-size: clamp(16px, 2.2vw, 22px); font-weight: 600; color: #fff; opacity: 1; white-space: nowrap; min-height: 1.6em; }
+
+.waveform {
+  position: relative; width: min(88vw, 900px); height: clamp(52px, 10cqi, 88px);
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; align-items: end; gap: clamp(2px, 0.8cqi, 6px);
+  padding-inline: clamp(6px, 1.5cqi, 12px);
+}
+.waveform .bar { background: #fff; width: 100%; border-radius: 2px 2px 0 0; transform-origin: bottom center; height: 12px; opacity: 1; will-change: transform; }
+
+.result-card { width: min(92vw, 820px); margin-top: 12px; padding: 16px; border: 1px solid #fff; background: transparent; border-radius: 8px; animation: none; transform: none; }
+.result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.badge { color: #fff; opacity: 1; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; font-size: clamp(10px, 1.2vw, 12px); }
+.ayah-ar { font-size: clamp(22px, 6.2vw, 44px); line-height: 1.35; margin: 8px 0 6px; color: #fff; }
+.ayah-en { color: var(--muted); font-size: clamp(14px, 1.8vw, 18px); line-height: 1.7; }
+.result-actions { margin-top: 16px; display: flex; gap: 10px; }
+.ghost { background: transparent; color: #fff; border: 1px solid #fff; padding: 10px 14px; border-radius: 6px; cursor: pointer; }
+.ghost:hover { background: #fff; color: #000; }
+.ghost:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+/* Idle breathing animation (very subtle) */
+@keyframes breathe { from { } to { } }
+.app[data-state="idle"] .mic-button { animation: none; }
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .mic-button, .rings::before, .rings::after, .icon.spinner, .status-line, .result-card { animation: none !important; transition: none !important; }
+}
+
+

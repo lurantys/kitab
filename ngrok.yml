@@ -1,0 +1,15 @@
+# ngrok config for Kitab (runs from this directory)
+# 1) Replace <YOUR_AUTHTOKEN> with your token: `ngrok config add-authtoken <token>` OR edit here.
+# 2) Start: `ngrok start --all --config ngrok.yml`
+
+version: "2"
+authtoken: <YOUR_AUTHTOKEN>
+tunnels:
+  kitab:
+    proto: http
+    addr: 5500
+    host_header: rewrite
+    inspect: false
+    schemes:
+      - https
+

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#000000" />
+    <title>Kitab — Quran Audio Recognizer</title>
+    <meta name="description" content="Kitab — a modern, minimal Quran audio recognition UI with premium animations and bland tech palette." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=Tajawal:wght@800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <!-- Ambient canvas particles (ultra subtle) -->
+    <canvas id="particles" aria-hidden="true"></canvas>
+
+    <!-- Subtle geometric pattern overlay -->
+    <div class="geometric-pattern" aria-hidden="true"></div>
+
+    <main id="app" class="app" data-state="idle">
+      <header class="header" aria-hidden="true">
+        <h1 class="brand-ar" lang="ar" dir="rtl" aria-label="Kitab">كتاب</h1>
+      </header>
+
+      <section class="hero" id="hero" aria-labelledby="statusLine">
+        <button
+          id="recordButton"
+          class="mic-button"
+          aria-pressed="false"
+          aria-describedby="statusLine"
+        >
+          <span class="button-bg" aria-hidden="true"></span>
+          <span class="ripple" aria-hidden="true"></span>
+          <span class="rings" aria-hidden="true"></span>
+          <span class="icon mic" aria-hidden="true">
+            <!-- Microphone icon -->
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" role="img">
+              <path d="M12 14a3 3 0 0 0 3-3V7a3 3 0 1 0-6 0v4a3 3 0 0 0 3 3Z" stroke="currentColor" stroke-width="2" />
+              <path d="M19 11a7 7 0 0 1-14 0" stroke="currentColor" stroke-width="2" />
+              <path d="M12 21v-4" stroke="currentColor" stroke-width="2" />
+            </svg>
+          </span>
+          <span class="icon stop" aria-hidden="true">
+            <!-- Stop/End icon -->
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" role="img">
+              <rect x="7" y="7" width="10" height="10" rx="2"></rect>
+            </svg>
+          </span>
+          <span class="icon spinner" aria-hidden="true"></span>
+        </button>
+
+        <div class="status" role="status" aria-live="polite">
+          <p id="statusLine" class="status-line">TAP TO RECOGNIZE</p>
+          <p id="arabicLine" class="arabic-line" dir="rtl" lang="ar"></p>
+        </div>
+
+        <!-- Waveform bars (animated via Web Audio) -->
+        <div class="waveform" id="waveform" aria-hidden="true">
+          <!-- Bars injected by JS -->
+        </div>
+      </section>
+
+      <section id="resultCard" class="result-card" hidden aria-live="polite">
+        <div class="result-header">
+          <span class="badge" id="surahBadge">Surah • Ayah</span>
+        </div>
+        <h2 class="ayah-ar" id="ayahArabic" dir="rtl" lang="ar"></h2>
+        <p class="ayah-en" id="ayahTranslation"></p>
+        <div class="result-actions">
+          <button class="ghost" id="tryAgainBtn" aria-label="Try again">Try Again</button>
+          <a class="ghost" id="readSurahBtn" href="#" target="_blank" rel="noopener" aria-label="Read surah on Quran.com" hidden>Read Surah</a>
+        </div>
+      </section>
+    </main>
+
+    <script defer src="app.js"></script>
+  </body>
+</html>
+
+

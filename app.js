@@ -1,5 +1,5 @@
 /*
-  Quran Recognize UI — Premium interactions
+  Quran Recognize UI — Premium interactions (جذر)
   - State machine: idle → listening → processing → results → idle
   - Web Audio API used to visualize live input (bars + ring scale)
   - CSS variables drive motion for 60fps animations
@@ -16,6 +16,7 @@
   const ayahTranslation = document.getElementById('ayahTranslation');
   const tryAgainBtn = document.getElementById('tryAgainBtn');
   const readSurahBtn = document.getElementById('readSurahBtn');
+  const playRecitationBtn = document.getElementById('playRecitationBtn');
   const waveform = document.getElementById('waveform');
   const particlesCanvas = document.getElementById('particles');
 
@@ -34,6 +35,9 @@
   let animationFrameId = null;
   let particlesAnimationId = null;
   let particlesStarted = false;
+  let recitationAudio = null;
+  let stopSequentialPlayback = false;
+  let lastResult = null;
 
   // Speech recognition (Web Speech API)
   let speechRecognition = null;
@@ -185,14 +189,14 @@
               ayahs: (s.ayahs || []).map((a) => ({ text: a.text || '' })),
             })),
           };
-          console.log('[Kitab] Quran corpus loaded from', url);
+          console.log('[جذر] Quran corpus loaded from', url);
           return quranCorpus;
         }
       } catch (e) {
-        console.warn('[Kitab] Corpus load failed from', url, e);
+        console.warn('[جذر] Corpus load failed from', url, e);
       }
     }
-    console.warn('[Kitab] Quran corpus unavailable');
+    console.warn('[جذر] Quran corpus unavailable');
     return null;
   }
 
@@ -243,7 +247,7 @@
       if (!best || score > best.score) best = { ...c, score };
     }
     if (best && best.score >= 0.12) { // conservative threshold
-      console.log('[Kitab] Corpus match score:', best.score.toFixed(3), best);
+          console.log('[جذر] Corpus match score:', best.score.toFixed(3), best);
       const base = { surah: best.surah, arabic: best.text, translation: '—' };
       if (best.ayah && !best.ayahEnd) return { ...base, ayah: best.ayah };
       if (best.ayahStart && best.ayahEnd) return { ...base, ayahStart: best.ayahStart, ayahEnd: best.ayahEnd };
@@ -385,6 +389,7 @@
     resultCard.hidden = true;
     document.documentElement.style.setProperty('--ring-scale', '1');
     bars.forEach((b) => { b.style.transform = 'scaleY(0.12)'; b.style.opacity = '0.7'; });
+    stopRecitation();
   }
 
   function toListening() {
@@ -394,7 +399,8 @@
     // Hide any previous results while capturing
     resultCard.hidden = true;
     latestTranscript = '';
-    console.log('[Kitab] Listening started');
+    console.log('[جذر] Listening started');
+    stopRecitation();
     startAudio()
       .then(() => {
         animateWaveform();
@@ -408,14 +414,23 @@
       });
   }
 
-  function toProcessing() {
+  async function toProcessing() {
+    // Capture any live transcript before UI overwrites the Arabic line
+    const liveBefore = (arabicLine.textContent || '').trim();
+
     setState(STATE.PROCESSING);
     setStatus('MATCHING RECITATION…');
     typewriterArabic('جارٍ المطابقة…');
+
     // stop live capture while we "process"
     if (animationFrameId) cancelAnimationFrame(animationFrameId);
     stopAudio();
     stopSpeech();
+    stopRecitation();
+
+    // Give Web Speech API a brief grace period to flush final results
+    await new Promise((resolve) => setTimeout(resolve, 350));
+
     const loading = 'Processing audio, finding verse…';
     let i = 0; statusLine.textContent = '';
     const step = () => {
@@ -424,19 +439,21 @@
       if (i <= loading.length) requestAnimationFrame(step);
     }; step();
 
-    const transcript = (latestTranscript || '').trim();
-    console.log('[Kitab] Processing transcript length:', transcript.length);
+    const transcriptFinal = (latestTranscript || '').trim();
+    const transcriptFallback = transcriptFinal || liveBefore || '';
+    console.log('[جذر] Processing transcript length:', transcriptFallback.length);
+
     // Require meaningful Arabic transcript (avoid accidental empty/noise)
-    const normalized = normalizeArabic(transcript);
+    const normalized = normalizeArabic(transcriptFallback);
     if (!normalized || normalized.length < 6) {
-      console.warn('[Kitab] No transcript captured; showing error');
+      console.warn('[جذر] No transcript captured; showing error');
       toError('لم يتم التقاط صوت.');
       return;
     }
 
     // Dual-path: deterministic corpus matching, then AI fallback
-    identifyByCorpus(transcript)
-      .then((match) => match || identifySurahFromTranscript(transcript))
+    identifyByCorpus(transcriptFallback)
+      .then((match) => match || identifySurahFromTranscript(transcriptFallback))
       .then((result) => {
         if (result) toResults(result); else toError('تعذر التعرف على الآية.');
       })
@@ -449,6 +466,7 @@
   function toResults(result) {
     setState(STATE.RESULTS);
     setStatus('RESULTS');
+    lastResult = result;
     const label = formatAyahLabel(result);
     surahBadge.textContent = `${result.surah} • ${label}`;
     ayahArabic.textContent = result.arabic;
@@ -461,6 +479,13 @@
     } else {
       readSurahBtn.href = '#';
       readSurahBtn.setAttribute('hidden', '');
+    }
+    // Enable play button when we have a mappable surah and ayah info
+    if (surahNumber && (result.ayah || result.ayahStart || (Array.isArray(result.ayahs) && result.ayahs.length))) {
+      playRecitationBtn.removeAttribute('hidden');
+      playRecitationBtn.disabled = false;
+    } else {
+      playRecitationBtn.setAttribute('hidden', '');
     }
     resultCard.hidden = false;
   }
@@ -513,7 +538,7 @@
       ],
     };
 
-    console.log('[Kitab] Hack Club AI request:', body);
+    console.log('[جذر] Hack Club AI request:', body);
     const resp = await fetch(HACK_CLUB_COMPLETIONS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -522,7 +547,7 @@
     if (!resp.ok) throw new Error(`Hack Club AI ${resp.status}`);
     const data = await resp.json();
     const content = (data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content || '').trim();
-    console.log('[Kitab] Hack Club AI response content:', content);
+    console.log('[جذر] Hack Club AI response content:', content);
 
     // Extract JSON from content (handles code fences)
     let jsonText = content;
@@ -584,6 +609,64 @@
 
   tryAgainBtn.addEventListener('click', () => {
     toIdle();
+  });
+
+  // Simple recitation source using Quran.com CDN (Alafasy - 64kb)
+  function buildRecitationUrl(surahNumber, ayahNumber) {
+    const s = String(surahNumber).padStart(3, '0');
+    const a = String(ayahNumber).padStart(3, '0');
+    // CDN path pattern: https://cdn.islamic.network/quran/audio/64/ar.alafasy/001001.mp3 (surah+ayah combined)
+    return `https://cdn.islamic.network/quran/audio/64/ar.alafasy/${s}${a}.mp3`;
+  }
+
+  function stopRecitation() {
+    stopSequentialPlayback = true;
+    if (recitationAudio) {
+      try { recitationAudio.pause(); } catch (_) {}
+      recitationAudio = null;
+    }
+  }
+
+  async function playRecitationForResult() {
+    const result = lastResult;
+    if (!result) return;
+    const surahNumber = mapSurahNameToNumber(result.surah);
+    if (!surahNumber) return;
+    stopSequentialPlayback = false;
+
+    // Determine ayah set from structured result
+    let ayahList = [];
+    if (Array.isArray(result.ayahs) && result.ayahs.length) {
+      ayahList = [...result.ayahs].sort((a, b) => a - b);
+    } else if (result.ayahStart && result.ayahEnd) {
+      for (let i = result.ayahStart; i <= result.ayahEnd; i += 1) ayahList.push(i);
+    } else if (result.ayah) {
+      ayahList = [Number(result.ayah)];
+    }
+    if (!ayahList.length) return;
+
+    for (const ayahNumber of ayahList) {
+      if (stopSequentialPlayback) break;
+      const url = buildRecitationUrl(surahNumber, ayahNumber);
+      console.log('[جذر] Playing recitation', url);
+      recitationAudio = new Audio(url);
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise((resolve, reject) => {
+          recitationAudio.addEventListener('ended', resolve, { once: true });
+          recitationAudio.addEventListener('error', reject, { once: true });
+          recitationAudio.play().catch(reject);
+        });
+      } catch (e) {
+        console.warn('[جذر] Recitation playback failed', e);
+        break;
+      }
+    }
+  }
+
+  playRecitationBtn.addEventListener('click', () => {
+    stopRecitation();
+    playRecitationForResult();
   });
 
   // Surah name to number mapping (Arabic preferred), tolerant to prefixes/diacritics
@@ -658,6 +741,7 @@
     if (document.hidden) {
       cancelAnimations();
       if (currentState === STATE.LISTENING) stopAudio();
+      if (recitationAudio) { try { recitationAudio.pause(); } catch (_) {} }
     } else {
       if (currentState === STATE.LISTENING && !animationFrameId) animateWaveform();
       if (!particlesAnimationId) startParticles();

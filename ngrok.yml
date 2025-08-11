@@ -1,4 +1,4 @@
-# ngrok config for Kitab (runs from this directory)
+# ngrok config for جذر (runs from this directory)
 # 1) Replace <YOUR_AUTHTOKEN> with your token: `ngrok config add-authtoken <token>` OR edit here.
 # 2) Start: `ngrok start --all --config ngrok.yml`
 

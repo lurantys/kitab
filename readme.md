@@ -1,4 +1,4 @@
-Kitab — Quran Audio Recognizer (UI Prototype)
+جذر — Quran Audio Recognizer (UI Prototype)
 ============================================
 
 A modern, startup‑style Quran "Shazam-like" recognition UI built with semantic HTML, modern CSS, and vanilla JS. Premium animations, accessibility, and a cool bland tech palette.

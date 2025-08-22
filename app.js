@@ -418,9 +418,10 @@
     // Capture any live transcript before UI overwrites the Arabic line
     const liveBefore = (arabicLine.textContent || '').trim();
 
-    setState(STATE.PROCESSING);
-    setStatus('MATCHING RECITATION…');
-    typewriterArabic('جارٍ المطابقة…');
+  setState(STATE.PROCESSING);
+  setStatus('MATCHING RECITATION…');
+  typewriterArabic(''); // Clear transcript line to prevent overlap
+  arabicLine.textContent = '';
 
     // stop live capture while we "process"
     if (animationFrameId) cancelAnimationFrame(animationFrameId);

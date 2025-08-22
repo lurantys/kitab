@@ -47,6 +47,7 @@ body {
   justify-items: center;
   position: relative;
   padding: clamp(16px, 3.5vw, 48px);
+  overflow-x: hidden;
 }
 
 .header { width: 100%; display: flex; justify-content: center; }
@@ -135,14 +136,35 @@ body {
   text-align: center;
   display: grid; gap: 8px;
 }
-.status-line { letter-spacing: 0.2em; text-transform: uppercase; font-weight: 800; color: #fff; opacity: 0.9; transform: none; }
+.status-line {
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: #fff;
+  opacity: 0.9;
+  transform: none;
+  white-space: pre-line;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  text-align: center;
+}
 .status-line.enter { animation: fadeUp 560ms cubic-bezier(.2,.8,.2,1) both; }
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.arabic-line { font-size: clamp(16px, 2.2vw, 22px); font-weight: 600; color: #fff; opacity: 1; white-space: nowrap; min-height: 1.6em; }
+.arabic-line {
+  font-size: clamp(16px, 2.2vw, 22px);
+  font-weight: 600;
+  color: #fff;
+  opacity: 1;
+  white-space: pre-line;
+  min-height: 1.6em;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  text-align: center;
+}
 
 .waveform {
   position: relative; width: min(88vw, 900px); height: clamp(52px, 10cqi, 88px);

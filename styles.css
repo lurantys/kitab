@@ -134,7 +134,10 @@ body {
 
 .status {
   text-align: center;
-  display: grid; gap: 8px;
+  display: grid;
+  gap: 8px;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 .status-line {
   letter-spacing: 0.2em;
@@ -147,6 +150,8 @@ body {
   word-break: break-word;
   overflow-wrap: break-word;
   text-align: center;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 .status-line.enter { animation: fadeUp 560ms cubic-bezier(.2,.8,.2,1) both; }
 @keyframes fadeUp {
@@ -164,6 +169,8 @@ body {
   word-break: break-word;
   overflow-wrap: break-word;
   text-align: center;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 .waveform {
@@ -216,6 +223,13 @@ body {
 
 /* Mobile-specific alignment fixes */
 @media (max-width: 600px) {
+  .status, .status-line, .arabic-line {
+    max-width: 100vw;
+    overflow-x: hidden;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    text-align: center;
+  }
   .result-card {
     width: 98vw;
     max-width: 100vw;
